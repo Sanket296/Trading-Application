@@ -8,23 +8,30 @@ const Rootpage = () => {
   const navigate = useNavigate();
   const [cookies, removeCookie] = useCookies([]);
   const [username, setUsername] = useState("");
-  useEffect(() => {
+ useEffect(() => {
     const verifyCookie = async () => {
       if (!cookies.token) {
         navigate("/login");
+        return;
       }
-      const { data } = await axios.post(
-        "http://localhost:8000",
-        {},
-        { withCredentials: true }
-      );
-      const { status, user } = data;
-      setUsername(user);
-      return status
-        ? toast(`Hello ${user}`, {
-            position: "top-right",
-          })
-        : (removeCookie("token"), navigate("/login"));
+      try {
+        const { data } = await axios.post(
+          "http://localhost:8000",
+          {},
+          { withCredentials: true }
+        );
+        const { status, user } = data;
+        setUsername(user);
+        return status
+          ? toast(`Hello ${user}`, {
+              position: "top-right",
+            })
+          : (removeCookie("token"), navigate("/login"));
+      } catch (error) {
+        console.error("Cookie verification failed:", error);
+        removeCookie("token");
+        navigate("/login");
+      }
     };
     verifyCookie();
   }, [cookies, navigate, removeCookie]);

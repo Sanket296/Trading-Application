@@ -3,103 +3,169 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 
+const styles = `
+.form_container {
+  max-width: 460px;
+  margin: 48px auto;
+  padding: 28px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+.form_header {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:18px;
+}
+.form_header h2 {
+  margin:0;
+  font-size:20px;
+  color:#0d6efd;
+  font-weight:700;
+}
+.auth_form .form_row {
+  margin-bottom:14px;
+  display:flex;
+  flex-direction:column;
+}
+.auth_form label {
+  font-size:13px;
+  margin-bottom:6px;
+  color:#374151;
+}
+.auth_form input {
+  padding:10px 12px;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  font-size:14px;
+  outline:none;
+  transition:box-shadow .12s, border-color .12s;
+}
+.auth_form input:focus {
+  border-color:#3b82f6;
+  box-shadow:0 0 0 6px rgba(59,130,246,0.06);
+}
+.btn_primary {
+  width:100%;
+  padding:10px 12px;
+  background:#0d6efd;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background .12s;
+}
+.btn_primary:hover { background:#0b5ed7; }
+.form_footer {
+  margin-top:12px;
+  text-align:center;
+  font-size:14px;
+  color:#6b7280;
+}
+.form_footer a { color:#0d6efd; text-decoration:none; font-weight:600; }
+@media (max-width:480px) {
+  .form_container { margin:24px 16px; padding:20px; }
+}
+`;
+
 const Signup = () => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState({
+    username: "",
     email: "",
     password: "",
-    username: "",
   });
-  const { email, password, username } = inputValue;
+  const { username, email, password } = inputValue;
+
   const handleOnChange = (e) => {
-    const { name, value } = e.target;
-    setInputValue({
-      ...inputValue,
-      [name]: value,
-    });
+    const { name: key, value } = e.target;
+    setInputValue((s) => ({ ...s, [key]: value }));
   };
 
   const handleError = (err) =>
-    toast.error(err, {
-      position: "bottom-left",
-    });
+    toast.error(err, { position: "bottom-left" });
   const handleSuccess = (msg) =>
-    toast.success(msg, {
-      position: "bottom-right",
-    });
+    toast.success(msg, { position: "bottom-left" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!username || !email || !password) {
+      return handleError("Please fill all fields.");
+    }
     try {
       const { data } = await axios.post(
-        "http://localhost:8000/signup",
-        {
-          ...inputValue,
-        },
+        `${process.env.REACT_APP_BACKEND_URL}/signup`,
+        { username, email, password },
         { withCredentials: true }
       );
       const { success, message } = data;
       if (success) {
-        handleSuccess(message);
+        handleSuccess(message || "Signup successful");
         setTimeout(() => {
-          // navigate("/");
-           window.location.href = 'http://localhost:3001/dashboard'; // Your dashboard app URL
+          navigate("/login");
         }, 1000);
       } else {
-        handleError(message);
+        handleError(message || "Signup failed");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.error(err);
+      handleError("Signup failed. Please try again.");
     }
-    setInputValue({
-      ...inputValue,
-      email: "",
-      password: "",
-      username: "",
-    });
+    setInputValue({ username: "", email: "", password: "" });
   };
 
   return (
-    <div className="form_container">
-      <h2>Signup Account</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={email}
-            placeholder="Enter your email"
-            onChange={handleOnChange}
-          />
+    <>
+      <style>{styles}</style>
+      <div className="form_container">
+        <div className="form_header">
+          <h2>Create your TradeWave account</h2>
         </div>
-        <div>
-          <label htmlFor="email">Username</label>
-          <input
-            type="text"
-            name="username"
-            value={username}
-            placeholder="Enter your username"
-            onChange={handleOnChange}
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            name="password"
-            value={password}
-            placeholder="Enter your password"
-            onChange={handleOnChange}
-          />
-        </div>
-        <button type="submit">Submit</button>
-        <span>
-          Already have an account? <Link to={"/login"}>Login</Link>
-        </span>
-      </form>
-      <ToastContainer />
-    </div>
+        <form onSubmit={handleSubmit} className="auth_form" noValidate>
+          <div className="form_row">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={username}
+              placeholder="Choose a username"
+              onChange={handleOnChange}
+              required
+            />
+          </div>
+          <div className="form_row">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={email}
+              placeholder="you@domain.com"
+              onChange={handleOnChange}
+              required
+            />
+          </div>
+          <div className="form_row">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={password}
+              placeholder="Enter password"
+              onChange={handleOnChange}
+              required
+            />
+          </div>
+          <button type="submit" className="btn_primary">Create account</button>
+          <div className="form_footer">
+            Already have an account? <Link to={"/login"}>Login</Link>
+          </div>
+        </form>
+        <ToastContainer />
+      </div>
+    </>
   );
 };
 
